@@ -1,0 +1,109 @@
+<?php
+namespace App\DB;
+
+use \PDO;
+use \PDOException;
+
+ /**
+  * Summary of Database
+  */
+
+class Database {
+    /**
+     * Host de conexão do banco
+     * @var string
+     */
+    const HOST = 'localhost';
+
+    /**
+     * Nome do banco de dados
+     * @var string
+     */
+    const NAME = 'asterisk';
+
+     /**
+      * Usarios do banco de dados
+      * @var string
+      */
+
+    const USER = 'root';
+
+     /**
+      * Senha do banco de dados
+      * @var string
+      */
+
+    const PASS = 'p123456';
+
+    /**
+     * Nome da tabela manipulada
+     * @var mixed
+     */
+    private $table;
+
+    /**
+     * Instancia de conexão com o banco de dados
+     * @var PDO
+     */
+    private $connection;
+
+    /**
+     * Define a tabela e instancia de conexao
+     * @param mixed $table
+     */
+    public function __construct($table = null){
+        $this->$table = $table;
+ 
+        $this->setConnection();
+    }
+    /**
+     * Metodo responsavel criar conexão com o banco
+     */
+    private function setConnection(){
+        try{
+            $this->connection = new PDO('mysql:host='.self::HOST.';dbname='.self::NAME,self::USER,self::PASS);
+            $this->connection->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
+        }catch(PDOException $e){
+            die('ERROR' .$e->getMessage());
+        }
+    }
+    /**
+     * Metodo responsavel executar querys no banco 
+     * @param string $query
+     * @param array  $params
+     * @return \PDOStatement
+     */
+    public function execute($query,$params = []){
+        try{
+
+            $statement = $this->connection->prepare($query);
+            $statement->execute($params);
+            return $statement;
+        }catch(PDOException $e){
+            die('ERROR' . $e->getMessage());
+        }
+
+    }
+    /**
+     * Metodo responsavel por inserir dados no banco
+     * @param array @values
+     * @return integer
+     */
+    public function insert($values){
+        //Dados da query
+        $fields = array_keys($values);
+        $binds =  array_pad([],count($fields),'?');
+        //Monta query
+        $query = "INSERT INTO ".$this->table." (".implode(",",$fields).") VALUES (".implode(",",$binds).")";
+        //$query = 'INSERT INTO '.$this->table.' ('.implode(',',$fields).') VALUES ('.implode(',',$binds).')';
+        //$query = 'INSERT INTO users (username,password,name,email) VALUES (?,?,?,?)';
+
+        //echo $query;
+        //exit;
+        $this->execute($query,array_values($values));
+
+        //Retornar o id inserido
+        return $this->connection->lastInsertId();
+    }
+}
+?>
